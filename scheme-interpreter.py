@@ -70,14 +70,12 @@ def tokenize(s):
     return tokens
 
 def read_from_tokens(tokens):
-    "Read an expression from a sequence of tokens."
     if len(tokens) == 0:
         raise SyntaxError('unexpected EOF while reading')
     token = tokens.pop(0)
     if token == '(':
         L = []
         while tokens[0] != ')':
-            # Handling dotted list notation: if we encounter a dot, expect a single element and then a ')'
             if tokens[0] == '.':
                 tokens.pop(0)
                 tail = read_from_tokens(tokens)
@@ -94,7 +92,6 @@ def read_from_tokens(tokens):
         return atom(token)
 
 def atom(token):
-    "Numbers become numbers; booleans, strings, and every other token is a symbol."
     if token[0] == '"' and token[-1] == '"':  # String literal
         return token[1:-1]
     if token == '#t':
@@ -110,13 +107,11 @@ def atom(token):
             return Symbol(token)
 
 def make_dotted_list(lst, tail):
-    "Create a dotted list representation. Here we simply return a tuple for later processing."
-    return (lst, tail)  # You can later implement a proper Pair type.
+    return (lst, tail)  #todo
 
 ################ Environments
 
 def standard_env():
-    "An environment with some Scheme standard procedures."
     env = Env()
     env.update(vars(math))  # sin, cos, sqrt, pi, ...
     env.update({
@@ -142,10 +137,9 @@ def standard_env():
         'procedure?': callable,
         'round': round,
         'symbol?': lambda x: isinstance(x, Symbol),
-        # Derived forms to be defined (they can also be defined as macros later)
+        # todo: derived forms to be defined (they can also be defined as macros later)
         'cond': lambda *clauses: cond_expansion(clauses),
         'let': lambda bindings, body: let_expansion(bindings, body),
-        # Placeholder for call/cc (call-with-current-continuation)
         'call/cc': lambda proc: call_cc(proc)
     })
     return env
@@ -169,7 +163,6 @@ global_env = standard_env()
 ################ Derived Forms Expansions
 
 def cond_expansion(clauses):
-    "Expand a cond expression into nested if expressions."
     if not clauses:
         return None
     first, *rest = clauses
@@ -180,7 +173,6 @@ def cond_expansion(clauses):
         return ['if', test, expr, cond_expansion(rest)]
 
 def let_expansion(bindings, body):
-    "Expand a let expression into a lambda application."
     vars = [var for (var, exp) in bindings]
     exps = [exp for (var, exp) in bindings]
     return [[ 'lambda', vars, body ]] + exps
@@ -190,7 +182,6 @@ class Continuation(Exception):
         self.value = value
 
 def call_cc(proc):
-    "Call-with-current-continuation: passes the current continuation to proc."
     def cont(value):
         raise Continuation(value)
     try:
